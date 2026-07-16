@@ -1,0 +1,1335 @@
+<title>AI-Powered R2R — พลิกโฉมงานประจำสู่งานวิจัย</title>
+<style>
+  :root{
+    --bg:#f2faf5;
+    --bg-deep:#04120b;
+    --surface:#ffffff;
+    --surface-tint:#eaf7ef;
+    --ink:#0a2c1b;
+    --ink-soft:#3d5548;
+    --ink-faint:#6f8579;
+    --accent:#0fdc79;
+    --accent-2:#00b368;
+    --accent-3:#7cf5b8;
+    --accent-deep:#063c25;
+    --line:#cfe9db;
+    --glow:rgba(15,220,121,.38);
+    --rose:#e0637a;
+    --shadow-1:0 1px 2px rgba(6,40,25,.06), 0 10px 24px -10px rgba(6,40,25,.18);
+    --shadow-2:0 2px 6px rgba(6,40,25,.10), 0 24px 50px -18px rgba(6,40,25,.30);
+    --font-display:"Leelawadee UI","Tahoma","Segoe UI",sans-serif;
+    --font-body:"Tahoma","Leelawadee UI","Segoe UI",sans-serif;
+    --font-mono:"Cascadia Code","Consolas","Courier New",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#05140c; --bg-deep:#010a05; --surface:#0e2619; --surface-tint:#0c2117;
+      --ink:#eafff2; --ink-soft:#adddc4; --ink-faint:#7fa793;
+      --accent:#22ff97; --accent-2:#13c47a; --accent-3:#9dffce; --accent-deep:#03220f;
+      --line:#153a27; --glow:rgba(34,255,151,.42); --rose:#ff8fa1;
+      --shadow-1:0 1px 2px rgba(0,0,0,.4), 0 10px 24px -10px rgba(0,0,0,.6);
+      --shadow-2:0 2px 6px rgba(0,0,0,.5), 0 30px 60px -20px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#05140c; --bg-deep:#010a05; --surface:#0e2619; --surface-tint:#0c2117;
+    --ink:#eafff2; --ink-soft:#adddc4; --ink-faint:#7fa793;
+    --accent:#22ff97; --accent-2:#13c47a; --accent-3:#9dffce; --accent-deep:#03220f;
+    --line:#153a27; --glow:rgba(34,255,151,.42); --rose:#ff8fa1;
+  }
+  :root[data-theme="light"]{
+    --bg:#f2faf5; --bg-deep:#04120b; --surface:#ffffff; --surface-tint:#eaf7ef;
+    --ink:#0a2c1b; --ink-soft:#3d5548; --ink-faint:#6f8579; --accent:#0fdc79;
+    --accent-2:#00b368; --accent-3:#7cf5b8; --accent-deep:#063c25; --line:#cfe9db; --glow:rgba(15,220,121,.38);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0;}
+  p,li{text-wrap:pretty;}
+  ::selection{background:var(--accent); color:#03150c;}
+  a{color:inherit;}
+  .num{font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .en{letter-spacing:-.01em;}
+
+  /* ---------- ambient stage ---------- */
+  .stage{position:fixed; inset:0; z-index:0; background:
+      radial-gradient(60% 50% at 82% 8%, var(--glow), transparent 60%),
+      radial-gradient(45% 40% at 6% 92%, rgba(15,220,121,.18), transparent 65%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg) 100%);
+    overflow:hidden;
+  }
+  .stage::before{ /* faint isometric floor grid for depth */
+    content:""; position:absolute; left:-10%; right:-10%; bottom:-30%; height:70%;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,.5), transparent 85%);
+            mask-image:linear-gradient(to top, rgba(0,0,0,.5), transparent 85%);
+    transform:perspective(600px) rotateX(58deg);
+    opacity:.5;
+  }
+  .blob{position:absolute; border-radius:50%; filter:blur(60px); opacity:.5; background:radial-gradient(circle at 30% 30%, var(--accent-3), var(--accent-2) 55%, transparent 75%);}
+  .blob-a{width:38vw; height:38vw; top:-10%; right:-6%; animation:drift 26s ease-in-out infinite;}
+  .blob-b{width:26vw; height:26vw; bottom:-8%; left:-6%; opacity:.35; animation:drift 32s ease-in-out infinite reverse;}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(3%,4%) scale(1.08);}}
+  @media (prefers-reduced-motion:reduce){ .blob{animation:none !important;} }
+
+  /* ---------- deck / slides ---------- */
+  #deck{position:relative; z-index:1; height:100vh; overflow-y:auto; overflow-x:hidden; scroll-snap-type:y proximity; scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ #deck{scroll-behavior:auto;} }
+  .slide{
+    min-height:100vh; scroll-snap-align:start; display:flex; flex-direction:column; justify-content:center;
+    padding:clamp(4.5rem,9vh,6.5rem) clamp(1.4rem,6vw,6rem) clamp(3rem,7vh,4.5rem);
+    position:relative;
+  }
+  .slide-inner{max-width:1280px; margin:0 auto; width:100%;}
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:.5rem; font-family:var(--font-mono); font-size:.78rem;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent-2); font-weight:700; margin-bottom:1rem;
+  }
+  .eyebrow::before{content:""; width:22px; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:2px;}
+  .slide h2{font-size:clamp(1.9rem,3.6vw,2.9rem); font-weight:800; line-height:1.15; color:var(--ink); margin-bottom:.35rem;}
+  .rule{width:96px; height:6px; border-radius:6px; margin:1.1rem 0 2rem;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    box-shadow:0 6px 16px -4px var(--glow), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  [data-reveal]{opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1);}
+  [data-reveal].in{opacity:1; transform:translateY(0);}
+  @media (prefers-reduced-motion:reduce){ [data-reveal]{opacity:1; transform:none; transition:none;} }
+
+  /* ---------- 3D icon badge ---------- */
+  .badge3d{
+    --sz:76px; width:var(--sz); height:var(--sz); border-radius:22px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(150deg, var(--accent-3), var(--accent) 45%, var(--accent-2) 100%);
+    box-shadow:
+      inset 0 2px 3px rgba(255,255,255,.65),
+      inset 0 -8px 14px rgba(2,40,22,.35),
+      0 14px 26px -10px var(--glow), 0 3px 6px rgba(4,30,18,.25);
+    color:#06301c; position:relative; transform-style:preserve-3d;
+  }
+  .badge3d svg{width:56%; height:56%; stroke:#06301c;}
+  .badge3d.sm{--sz:52px; border-radius:16px;}
+  .badge3d.dark{background:linear-gradient(150deg, var(--accent-deep), #0a4a2c 60%, var(--accent-2)); color:var(--accent-3);}
+  .badge3d.dark svg{stroke:var(--accent-3);}
+
+  /* ---------- cards ---------- */
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem;}
+  .grid2{display:grid; grid-template-columns:1.05fr .95fr; gap:1.6rem;}
+  @media (max-width:920px){ .grid3{grid-template-columns:1fr;} .grid2{grid-template-columns:1fr;} }
+
+  .panel{
+    background:linear-gradient(180deg, var(--surface), var(--surface-tint));
+    border:1px solid var(--line); border-radius:22px; padding:1.7rem 1.6rem;
+    box-shadow:var(--shadow-1);
+    transition:transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease;
+  }
+  .panel:hover{ transform:translateY(-6px) rotateX(2deg); box-shadow:var(--shadow-2); }
+  @media (prefers-reduced-motion:reduce){ .panel:hover{transform:none;} }
+  .panel h3{font-size:1.18rem; font-weight:800; margin-bottom:.85rem; display:flex; align-items:center; gap:.7rem; color:var(--ink);}
+  .panel p, .panel li{font-size:clamp(1rem,1.15vw,1.12rem); line-height:1.62; color:var(--ink-soft);}
+
+  ul.bullets{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.7rem;}
+  ul.bullets li{display:flex; gap:.7rem; align-items:flex-start;}
+  ul.bullets li::before{
+    content:""; flex:none; width:12px; height:12px; margin-top:.42em; border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, #eafff2, var(--accent) 55%, var(--accent-2));
+    box-shadow:0 2px 5px -1px var(--glow), inset 0 -1px 1px rgba(2,40,22,.35);
+  }
+  ul.bullets b, .panel li b, .panel p b{color:var(--ink); font-weight:800;}
+  ul.bullets .accent-text{color:var(--accent-2); font-weight:800;}
+
+  .pill{display:inline-flex; align-items:center; font-family:var(--font-mono); font-weight:700; font-size:.86rem;
+    padding:.42rem .85rem; border-radius:999px; background:linear-gradient(150deg,var(--accent-3),var(--accent));
+    color:#06301c; box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 6px 14px -6px var(--glow); margin:.2rem .35rem .2rem 0;}
+  .pill.ghost{background:var(--surface); border:1px solid var(--line); color:var(--ink); box-shadow:var(--shadow-1);}
+
+  /* ---------- prompt / terminal box ---------- */
+  .prompt-box{
+    position:relative; background:linear-gradient(165deg, var(--bg-deep), var(--accent-deep) 130%);
+    border-radius:18px; padding:1.4rem 1.5rem 1.4rem 1.7rem; margin:.9rem 0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), inset 0 -18px 30px rgba(0,0,0,.35), 0 18px 34px -16px rgba(2,20,12,.55);
+    border:1px solid rgba(34,255,151,.18);
+  }
+  .prompt-box::before{content:""; position:absolute; left:0; top:10px; bottom:10px; width:4px; border-radius:4px;
+    background:linear-gradient(180deg, var(--accent), var(--accent-2)); box-shadow:0 0 16px var(--glow);}
+  .prompt-tag{display:flex; align-items:center; gap:.5rem; font-family:var(--font-mono); color:var(--accent-3); font-size:.76rem;
+    letter-spacing:.1em; text-transform:uppercase; margin-bottom:.6rem; opacity:.85;}
+  .prompt-tag .dot{width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent);}
+  .prompt-box p{font-family:var(--font-mono); color:#dcfff0; font-size:.98rem; line-height:1.7; margin:0 0 .55rem; font-style:italic;}
+  .prompt-box p:last-child{margin-bottom:0;}
+  .prompt-box .role-tag{font-style:normal; color:var(--accent-3); font-weight:700; margin-right:.3rem;}
+  .prompt-caption{font-size:.95rem; color:var(--ink-faint); line-height:1.6; margin-top:.7rem; font-style:italic;}
+
+  /* ---------- stat plate ---------- */
+  .stat-plate{
+    background:linear-gradient(165deg, var(--accent-deep), #0a4a2c 120%); border-radius:20px;
+    padding:1.7rem 1.4rem; text-align:center; margin:1rem 0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -16px 26px rgba(0,0,0,.32), 0 20px 40px -18px rgba(3,25,15,.55);
+    border:1px solid rgba(34,255,151,.2);
+  }
+  .stat-plate .num{display:block; font-size:clamp(2.4rem,4.6vw,3.4rem); font-weight:800; line-height:1;
+    background:linear-gradient(180deg,#e9fff3,var(--accent) 70%); -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 6px 22px var(--glow); letter-spacing:-.02em;}
+  .stat-plate .lbl{display:block; margin-top:.5rem; font-size:.82rem; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-3); font-weight:700;}
+
+  .role-note{display:flex; gap:.65rem; align-items:flex-start; font-size:.98rem; color:var(--ink-soft); line-height:1.55; margin-top:.9rem;}
+  .role-note svg{flex:none; width:20px; height:20px; margin-top:.15rem; stroke:var(--accent-2);}
+  .role-note b{color:var(--ink);}
+
+  /* ---------- use case slides ---------- */
+  .uc-head{display:flex; align-items:center; gap:1.1rem; margin-bottom:1.6rem;}
+  .uc-col-head{display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem;}
+  .uc-num{font-family:var(--font-mono); font-weight:800; font-size:.95rem; color:#06301c; width:28px; height:28px; border-radius:9px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(150deg,var(--accent-3),var(--accent-2)); box-shadow:var(--shadow-1);}
+  .uc-col-head h3{font-size:1.05rem; font-weight:800; color:var(--ink);}
+
+  /* ---------- rail nav ---------- */
+  .rail{position:fixed; right:clamp(.6rem,2vw,1.6rem); top:50%; transform:translateY(-50%); z-index:5;
+    display:flex; flex-direction:column; align-items:center; gap:9px;}
+  .rail button{width:9px; height:9px; padding:0; border-radius:50%; border:none; cursor:pointer; background:var(--line);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); transition:all .25s ease;}
+  .rail button.active{width:11px; height:26px; border-radius:7px; background:linear-gradient(180deg,var(--accent),var(--accent-2)); box-shadow:0 0 10px var(--glow);}
+  @media (max-width:760px){ .rail{display:none;} }
+
+  .chrome-top{position:fixed; top:0; left:0; right:0; z-index:6; display:flex; align-items:center; justify-content:space-between;
+    padding:1rem clamp(1rem,4vw,2.2rem); pointer-events:none;}
+  .brandmark{display:flex; align-items:center; gap:.55rem; font-family:var(--font-mono); font-weight:700; font-size:.82rem; color:var(--ink-soft); letter-spacing:.03em;}
+  .brandmark .dotmark{width:9px; height:9px; border-radius:50%; background:radial-gradient(circle at 30% 30%,#eafff2,var(--accent));box-shadow:0 0 8px var(--glow);}
+  .counter{font-family:var(--font-mono); font-size:.82rem; color:var(--ink-faint); letter-spacing:.05em;}
+  .progress-track{position:fixed; top:0; left:0; right:0; height:3px; background:transparent; z-index:7;}
+  .progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent-2),var(--accent)); box-shadow:0 0 10px var(--glow); transition:width .15s linear;}
+
+  .navctrl{position:fixed; right:clamp(.9rem,3vw,2rem); bottom:clamp(.9rem,3vh,1.8rem); z-index:6; display:flex; gap:.6rem;}
+  .navctrl button{
+    width:46px; height:46px; border-radius:14px; border:1px solid var(--line); cursor:pointer;
+    background:linear-gradient(150deg,var(--surface),var(--surface-tint)); color:var(--ink);
+    box-shadow:var(--shadow-1); display:flex; align-items:center; justify-content:center; transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .navctrl button:hover{ transform:translateY(-3px); box-shadow:var(--shadow-2); }
+  .navctrl button:focus-visible, .rail button:focus-visible, a:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  .navctrl button svg{width:20px; height:20px; stroke:var(--ink);}
+
+  /* ---------- hero (slide 1) ---------- */
+  .hero-grid{display:grid; grid-template-columns:1.1fr 1fr; gap:2.5rem; align-items:center;}
+  @media (max-width:920px){ .hero-grid{grid-template-columns:1fr;} }
+  .hero-eyebrow{font-family:var(--font-mono); font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent-2); font-weight:700;}
+  .hero-title{font-size:clamp(3rem,7.4vw,5.6rem); font-weight:800; line-height:.98; letter-spacing:-.02em; margin:.6rem 0 1.1rem;}
+  .hero-title .l1{display:block; color:var(--ink);}
+  .hero-title .l2{display:block; background:linear-gradient(120deg,var(--accent-2),var(--accent) 60%); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero-sub{font-size:clamp(1.15rem,1.7vw,1.45rem); color:var(--ink-soft); line-height:1.55; max-width:46ch; margin-bottom:1.6rem;}
+  .hero-cta{display:inline-flex; align-items:center; gap:.6rem; padding:.85rem 1.4rem; border-radius:14px; font-weight:800; font-size:1rem;
+    background:linear-gradient(150deg,var(--accent-3),var(--accent) 60%,var(--accent-2)); color:#06301c;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 16px 30px -12px var(--glow); margin-bottom:2.2rem;}
+  .hero-foot{display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+    border-top:1px solid var(--line); padding-top:1.2rem;}
+  .hero-foot .tagline{font-size:.95rem; color:var(--ink-faint); background:var(--surface-tint); border:1px solid var(--line); border-radius:12px; padding:.7rem 1rem;}
+  .hero-foot .presenter{font-weight:800; font-size:1.1rem; color:var(--ink);}
+
+  .hero-art{position:relative; aspect-ratio:1/1; max-width:520px; margin:0 auto; display:flex; align-items:center; justify-content:center;}
+  .hero-ring{position:absolute; border-radius:50%; border:1.5px dashed var(--line); }
+  .hero-ring.r1{inset:0;}
+  .hero-ring.r2{inset:10%;}
+  .hero-orb{width:56%; aspect-ratio:1/1; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 32% 28%, var(--accent-3), var(--accent) 45%, var(--accent-deep) 100%);
+    box-shadow:inset 0 10px 30px rgba(255,255,255,.35), inset 0 -22px 40px rgba(2,30,18,.5), 0 40px 70px -20px var(--glow);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-orb svg{width:46%; height:46%; stroke:#04301c;}
+  .float-badge{position:absolute; display:flex; align-items:center; justify-content:center; border-radius:16px;
+    background:linear-gradient(150deg,var(--surface),var(--surface-tint)); box-shadow:var(--shadow-2); border:1px solid var(--line);
+    animation:bob 6s ease-in-out infinite;}
+  .float-badge svg{width:44%; height:44%; stroke:var(--accent-2);}
+  .fb1{width:64px; height:64px; top:2%; left:4%; animation-delay:0s;}
+  .fb2{width:56px; height:56px; bottom:8%; left:-2%; animation-delay:1.3s;}
+  .fb3{width:60px; height:60px; top:10%; right:0%; animation-delay:.6s;}
+  .fb4{width:52px; height:52px; bottom:0%; right:10%; animation-delay:2s;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+  @media (prefers-reduced-motion:reduce){ .float-badge{animation:none;} }
+
+  /* ---------- roadmap track (slide 3) ---------- */
+  .track{display:flex; gap:.9rem; position:relative; padding-top:.5rem;}
+  .track::before{content:""; position:absolute; left:6%; right:6%; top:44px; height:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2)); opacity:.4; border-radius:3px;}
+  .track-tile{flex:1; background:linear-gradient(180deg,var(--surface),var(--surface-tint)); border:1px solid var(--line);
+    border-radius:18px; padding:1.1rem .9rem; text-align:center; box-shadow:var(--shadow-1); position:relative;}
+  .track-tile .tnum{font-family:var(--font-mono); font-weight:800; color:var(--accent-2); font-size:.85rem;}
+  .track-tile .ticon{width:52px; height:52px; margin:.5rem auto .6rem; border-radius:16px;
+    background:linear-gradient(150deg,var(--accent-3),var(--accent-2)); display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 2px 3px rgba(255,255,255,.6), inset 0 -8px 12px rgba(2,40,22,.35), 0 10px 20px -8px var(--glow);}
+  .track-tile .ticon svg{width:56%; height:56%; stroke:#06301c;}
+  .track-tile h4{font-size:.92rem; font-weight:800; margin-bottom:.25rem; color:var(--ink);}
+  .track-tile p{font-size:.76rem; color:var(--ink-faint); line-height:1.4; margin:0;}
+  @media (max-width:760px){ .track{flex-direction:column;} .track::before{display:none;} }
+
+  .steps-list{display:flex; flex-direction:column; gap:.85rem;}
+  .step-row{display:flex; gap:1rem; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1rem 1.2rem; box-shadow:var(--shadow-1);}
+  .step-row .snum{flex:none; width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:800;
+    background:linear-gradient(150deg,var(--accent-3),var(--accent)); color:#06301c; box-shadow:var(--shadow-1);}
+  .step-row p{margin:0; font-size:1.02rem; color:var(--ink-soft); line-height:1.55;}
+  .step-row b{color:var(--ink);}
+
+  /* ---------- dashboard mock (slide 7) ---------- */
+  .dash{background:linear-gradient(170deg, var(--bg-deep), var(--accent-deep) 140%); border-radius:22px; padding:1.3rem;
+    box-shadow:0 26px 50px -20px rgba(2,20,12,.55), inset 0 1px 0 rgba(255,255,255,.05); border:1px solid rgba(34,255,151,.18);}
+  .dash-title{font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-3); margin-bottom:.8rem; opacity:.85;}
+  .dash-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem;}
+  @media (max-width:600px){ .dash-grid{grid-template-columns:repeat(2,1fr);} }
+  .dash-tile{background:rgba(255,255,255,.04); border:1px solid rgba(34,255,151,.14); border-radius:12px; padding:.65rem .7rem;}
+  .dash-tile .k{font-size:.66rem; color:var(--ink-faint,#8fb7a4); text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:.3rem;}
+  .dash-tile .v{font-family:var(--font-mono); font-weight:800; font-size:1.15rem; color:#eafff2; display:block;}
+  .dash-tile .d{font-family:var(--font-mono); font-size:.72rem; font-weight:700;}
+  .dash-tile .d.up{color:var(--accent);}
+  .dash-tile .d.down{color:var(--rose);}
+  .dash-foot{display:flex; gap:.5rem; margin-top:.7rem; flex-wrap:wrap;}
+  .dash-chip{font-family:var(--font-mono); font-size:.68rem; color:#eafff2; background:rgba(34,255,151,.12); border:1px solid rgba(34,255,151,.25); padding:.35rem .6rem; border-radius:999px;}
+
+  /* ---------- ethics inset ---------- */
+  .inset-box{margin-top:1.2rem; background:linear-gradient(165deg, var(--accent-deep), #0a4a2c 120%); border-radius:16px; padding:1.1rem 1.3rem;
+    border:1px solid rgba(34,255,151,.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
+  .inset-box h4{color:var(--accent-3); font-size:.92rem; letter-spacing:.03em; margin-bottom:.4rem; font-weight:800;}
+  .inset-box p{color:#dcfff0; font-size:.95rem; line-height:1.6; margin:0;}
+
+  /* ---------- closing slide ---------- */
+  .close-grid{display:grid; grid-template-columns:1.2fr .8fr; gap:1.6rem; align-items:stretch;}
+  @media (max-width:920px){ .close-grid{grid-template-columns:1fr;} }
+  .qa-panel{background:linear-gradient(165deg, var(--bg-deep), var(--accent-deep) 140%); border-radius:22px; padding:2.2rem 1.8rem;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:.9rem;
+    box-shadow:0 26px 50px -20px rgba(2,20,12,.55); border:1px solid rgba(34,255,151,.2);}
+  .qa-panel .qa-big{font-size:clamp(2.6rem,5vw,3.6rem); font-weight:800; background:linear-gradient(180deg,#e9fff3,var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .qa-panel p{color:#cdf5e0; font-size:1.05rem; line-height:1.6; margin:0;}
+  .qa-panel a{font-family:var(--font-mono); color:var(--accent-3); font-weight:700; font-size:1.02rem; text-decoration:none; border-bottom:1px dashed var(--accent-3); padding-bottom:2px;}
+  .quote{font-size:1.15rem; font-style:italic; color:var(--ink); border-left:4px solid var(--accent); padding:.3rem 0 .3rem 1rem; margin-top:1.1rem;}
+
+  /* misc */
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+  .kicker-row{display:flex; align-items:center; gap:.6rem; margin-bottom:.6rem;}
+  .kicker-row h3{margin:0;}
+</style>
+
+<!-- ============ ICON LIBRARY ============ -->
+<svg class="sr-only" aria-hidden="true">
+<defs>
+<g id="ic-stroke" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></g>
+</defs>
+<symbol id="i-brain" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3"/>
+  <path d="M15 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3"/>
+  <path d="M9 3v16M15 3v16"/><circle cx="6.2" cy="8.4" r=".6" fill="currentColor" stroke="none"/><circle cx="17.8" cy="8.4" r=".6" fill="currentColor" stroke="none"/>
+</g></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9 2h6"/><path d="M10 2v6.2l-5.3 9.3A2 2 0 0 0 6.5 20.5h11a2 2 0 0 0 1.8-3l-5.3-9.3V2"/><path d="M7.6 15h8.8"/>
+</g></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>
+</g></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M13 2 4 14h6l-1 8 9-12h-6z"/></symbol>
+<symbol id="i-question" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="9"/><path d="M9.3 9.4a2.7 2.7 0 1 1 3.9 2.4c-1 .5-1.4 1.1-1.4 2.1"/><circle cx="11.8" cy="17" r=".6" fill="currentColor" stroke="none"/>
+</g></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 5.2A1.8 1.8 0 0 1 5.8 3.4H11V20H5.8A1.8 1.8 0 0 1 4 18.2z"/><path d="M20 5.2A1.8 1.8 0 0 0 18.2 3.4H13V20h5.2A1.8 1.8 0 0 0 20 18.2z"/>
+</g></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M8.3 11.5h7.4M8.3 15.5h5"/>
+</g></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="12" width="3.4" height="8" rx=".6"/><rect x="10.3" y="7" width="3.4" height="13" rx=".6"/><rect x="16.6" y="3.5" width="3.4" height="16.5" rx=".6"/>
+</g></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M6 2.5h8.5L19 7v14.5H6z"/><path d="M14.5 2.5V7H19"/><path d="M9 13h6M9 16.6h6"/>
+</g></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 10v4h3l7.5 4.2V5.8L6 10z"/><path d="M14.6 8.6a4.2 4.2 0 0 1 0 6.8"/>
+</g></symbol>
+<symbol id="i-bed" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 19v-7.2A1.8 1.8 0 0 1 4.8 10h4.4A1.8 1.8 0 0 1 11 11.8V14"/><path d="M13 14h6.2A1.8 1.8 0 0 1 21 15.8V19"/><path d="M2.3 21.5v-3M21.7 21.5v-3"/><path d="M2.3 16h19.4"/><circle cx="6.8" cy="7.5" r="1.7"/>
+</g></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 20.5s-7.3-4.4-9.6-9A5.4 5.4 0 0 1 12 6.3a5.4 5.4 0 0 1 9.6 5.2c-2.3 4.6-9.6 9-9.6 9z"/><path d="M3.8 12h3.2l1.8-3.5 2.6 6 1.7-4h4"/>
+</g></symbol>
+<symbol id="i-pill" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3.3" y="9" width="17.4" height="6" rx="3" transform="rotate(45 12 12)"/><line x1="9" y1="15" x2="15" y2="9"/>
+</g></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 5h16v11.2H8.4L4 20z"/><line x1="7.6" y1="9" x2="16.4" y2="9"/><line x1="7.6" y1="12.6" x2="13" y2="12.6"/>
+</g></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="5" width="18" height="16" rx="2.2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><circle cx="15.3" cy="15.3" r="2.5"/><path d="M15.3 14v1.5l1 .7"/>
+</g></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17.5" cy="9.2" r="2.2"/><path d="M15.3 20a5 5 0 0 1 6.6-4.7"/>
+</g></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="M6.3 10.6v4.6c0 1.6 2.9 3 5.7 3s5.7-1.4 5.7-3v-4.6"/><path d="M22 8v6"/>
+</g></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M14.7 6.4a4 4 0 0 0-5.3 5.3L3.6 17.5l3 3 5.8-5.8a4 4 0 0 0 5.3-5.3l-2.7 2.7-2-2z"/>
+</g></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 20C4 10 12 4 20 4c0 8-6 16-16 16z"/><path d="M4.6 19.4 14 10"/>
+</g></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 17l5.5-5.5L12.5 15 21 6.5"/><path d="M15 6.5h6v6"/>
+</g></symbol>
+<symbol id="i-shieldcheck" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3l7 3v5.6c0 5-3.5 7.7-7 8.9-3.5-1.2-7-3.9-7-8.9V6z"/><path d="M8.7 12.2l2.2 2.2 4.4-4.4"/>
+</g></symbol>
+<symbol id="i-truck" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="1.6" y="8.6" width="12" height="8.4" rx="1"/><path d="M13.6 11.6H18l3 3v2.4h-7.4z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.4" cy="19" r="1.6"/><path d="M8.6 5.6v2.6"/><circle cx="8.6" cy="4.6" r="1.2"/>
+</g></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <ellipse cx="12" cy="6.2" rx="7.2" ry="2.8"/><path d="M4.8 6.2v5.8c0 1.5 3.2 2.8 7.2 2.8s7.2-1.3 7.2-2.8V6.2"/><path d="M4.8 12v5.8c0 1.5 3.2 2.8 7.2 2.8s7.2-1.3 7.2-2.8V12"/>
+</g></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4.6" y="10.8" width="14.8" height="9.6" rx="2.2"/><path d="M7.6 10.8V7.6a4.4 4.4 0 0 1 8.8 0v3.2"/><circle cx="12" cy="15.4" r="1.4"/>
+</g></symbol>
+<symbol id="i-searchtext" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="10.2" cy="10.2" r="6"/><line x1="14.7" y1="14.7" x2="20.5" y2="20.5"/><line x1="7.2" y1="9" x2="13.2" y2="9"/><line x1="7.2" y1="11.6" x2="11.2" y2="11.6"/>
+</g></symbol>
+<symbol id="i-receipt" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M6 2.4h12v19.2l-3-2-3 2-3-2-3 2z"/><path d="M8.6 8h6.8M8.6 11.6l1.8 1.8 3.8-3.8"/>
+</g></symbol>
+<symbol id="i-calculator" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="5" y="2.6" width="14" height="18.8" rx="2"/><rect x="7.4" y="5" width="9.2" height="4" rx=".6"/>
+  <circle cx="8.6" cy="13.2" r=".6" fill="currentColor" stroke="none"/><circle cx="12" cy="13.2" r=".6" fill="currentColor" stroke="none"/><circle cx="15.4" cy="13.2" r=".6" fill="currentColor" stroke="none"/>
+  <circle cx="8.6" cy="16.8" r=".6" fill="currentColor" stroke="none"/><circle cx="12" cy="16.8" r=".6" fill="currentColor" stroke="none"/><circle cx="15.4" cy="16.8" r=".6" fill="currentColor" stroke="none"/>
+</g></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2 12s4-7.2 10-7.2 10 7.2 10 7.2-4 7.2-10 7.2S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+</g></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 3v18M5 7h14M8 21h8"/><path d="M5 7 2.2 13a2.9 2.9 0 0 0 5.6 0z"/><path d="M19 7l-2.8 6a2.9 2.9 0 0 0 5.6 0z"/>
+</g></symbol>
+<symbol id="i-seedling" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 21v-8.4"/><path d="M12 12.6C12 8 8 5 4 5c0 4 3.4 7.6 8 7.6z"/><path d="M12 12.6c0-4.6 4-7.6 8-7.6 0 4-3.4 7.6-8 7.6z"/>
+</g></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
+</g></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><g fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 5h16v11.2H9.4L4 20z"/><path d="M9.7 9.4a2.3 2.3 0 1 1 3.5 2c-.7.4-1.1.9-1.1 1.8"/><circle cx="12" cy="15.4" r=".6" fill="currentColor" stroke="none"/>
+</g></symbol>
+</svg>
+
+<div class="stage"><div class="blob blob-a"></div><div class="blob blob-b"></div></div>
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div class="chrome-top">
+  <div class="brandmark"><span class="dotmark"></span><span class="en">AI-POWERED R2R</span></div>
+  <div class="counter"><span class="num" id="slideCounter">01</span> / <span class="num">30</span></div>
+</div>
+<nav class="rail" id="rail" aria-label="ตำแหน่งสไลด์"></nav>
+<div class="navctrl">
+  <button id="prevBtn" aria-label="สไลด์ก่อนหน้า"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button>
+  <button id="nextBtn" aria-label="สไลด์ถัดไป"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><use href="#i-chevron"/></svg></button>
+</div>
+
+<main id="deck">
+
+<!-- ================= SLIDE 1 : TITLE ================= -->
+<section class="slide" id="slide-1">
+  <div class="slide-inner hero-grid">
+    <div data-reveal>
+      <div class="hero-eyebrow">หลักสูตรสำหรับผู้บริหารระดับกลาง</div>
+      <h1 class="hero-title en"><span class="l1">AI-POWERED</span><span class="l2">R2R</span></h1>
+      <p class="hero-sub">พลิกโฉมงานประจำสู่งานวิจัย สำหรับผู้บริหารสาธารณสุข</p>
+      <div class="hero-cta">หลักสูตรสำหรับผู้บริหารระดับกลาง</div>
+      <div class="hero-foot">
+        <div class="tagline en">Innovation &amp; Digital Transformation in Public Health</div>
+        <div class="presenter">ผศ.ศราวุธ เรืองสวัสดิ์</div>
+      </div>
+    </div>
+    <div class="hero-art" data-reveal>
+      <div class="hero-ring r1"></div><div class="hero-ring r2"></div>
+      <div class="hero-orb"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-brain"/></svg></div>
+      <div class="float-badge fb1"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-heart"/></svg></div>
+      <div class="float-badge fb2"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chart"/></svg></div>
+      <div class="float-badge fb3"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></div>
+      <div class="float-badge fb4"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pill"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 2 ================= -->
+<section class="slide" id="slide-2">
+  <div class="slide-inner">
+    <div class="eyebrow">Overview</div>
+    <h2 data-reveal>ทำไม R2R ถึงสำคัญสำหรับผู้บริหาร?</h2>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flask"/></svg></span>แก่นแท้ของ R2R</h3>
+        <ul class="bullets">
+          <li>ไม่ใช่แค่การทำวิจัย แต่คือการ <b>"แก้ปัญหาหน้างาน"</b> ด้วยหลักฐานเชิงประจักษ์</li>
+          <li>เปลี่ยนความเคยชินเดิมๆ เป็นนวัตกรรมการบริการที่มีคุณภาพ</li>
+        </ul>
+      </div>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg></span>บทบาทผู้บริหาร</h3>
+        <ul class="bullets">
+          <li><b class="accent-text">Facilitator:</b> สนับสนุนทรัพยากรและเวลาให้ทีมงาน</li>
+          <li><b class="accent-text">Culture Builder:</b> สร้างบรรยากาศแห่งการเรียนรู้และกล้าลองผิดลองถูก</li>
+          <li>นำผลลัพธ์จาก R2R ไปกำหนดเป็น <span class="accent-text">นโยบาย</span> ระดับหน่วยงาน</li>
+        </ul>
+      </div>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg></span>AI: ผู้ช่วยอัจฉริยะ</h3>
+        <ul class="bullets">
+          <li>ลด <b class="accent-text">Pain Points</b> หลัก: ไม่มีเวลา, ขาดทักษะสถิติ, เขียนรายงานยาก</li>
+          <li>เพิ่มประสิทธิภาพในการจัดการข้อมูลมหาศาลจากงานประจำ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 3 : ROADMAP ================= -->
+<section class="slide" id="slide-3">
+  <div class="slide-inner">
+    <div class="eyebrow">Roadmap</div>
+    <h2 data-reveal>AI Roadmap ในกระบวนการ R2R</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div>
+        <div class="track">
+          <div class="track-tile"><div class="tnum">01</div><div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-question"/></svg></div>
+            <h4 class="en">Ask a Question</h4><p class="en">Define the problem and formulate a research question</p></div>
+          <div class="track-tile"><div class="tnum">02</div><div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-searchtext"/></svg></div>
+            <h4 class="en">Gather Information</h4><p class="en">Search for relevant data and review credible sources</p></div>
+          <div class="track-tile"><div class="tnum">03</div><div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chart"/></svg></div>
+            <h4 class="en">Analyze Data</h4><p class="en">Examine the data, identify patterns, and draw conclusions</p></div>
+          <div class="track-tile"><div class="tnum">04</div><div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></div>
+            <h4 class="en">Report Findings</h4><p class="en">Compile the results and present findings in a clear report</p></div>
+        </div>
+      </div>
+      <div class="steps-list">
+        <div class="step-row"><span class="snum">1</span><p><b>Identify:</b> ค้นหาปัญหาและตั้งคำถามวิจัยจาก Data Pain Points</p></div>
+        <div class="step-row"><span class="snum">2</span><p><b>Review:</b> สรุปงานวิจัยและวรรณกรรมที่เกี่ยวข้องในพริบตา</p></div>
+        <div class="step-row"><span class="snum">3</span><p><b>Design:</b> ช่วยเขียน Proposal และออกแบบเครื่องมือเก็บข้อมูล</p></div>
+        <div class="step-row"><span class="snum">4</span><p><b>Analyze:</b> แปลผลสถิติที่ซับซ้อนให้เป็นสารสนเทศที่เข้าใจง่าย</p></div>
+        <div class="step-row"><span class="snum">5</span><p><b>Report:</b> ร่างรายงานและข้อเสนอแนะเชิงนโยบายเพื่อการขยายผล</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 4 : STEP 1 ================= -->
+<section class="slide" id="slide-4">
+  <div class="slide-inner">
+    <div class="eyebrow">AI-R2R Workflow · Step 1 of 5</div>
+    <h2 data-reveal>ขั้นตอนที่ 1: การตั้งคำถามวิจัย AI-Assisted</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-question"/></svg></span>เปลี่ยนปัญหาเป็นคำถาม</h3>
+        <ul class="bullets">
+          <li>AI ช่วยวิเคราะห์ <b>Data Pain Points</b> จากหน้างานประจำ</li>
+          <li>จัดโครงสร้างคำถามด้วยกรอบ <b>PICO</b>:</li>
+        </ul>
+        <div style="margin:.9rem 0;">
+          <span class="pill">P: Population</span><span class="pill">I: Intervention</span><span class="pill">C: Comparison</span><span class="pill">O: Outcome</span>
+        </div>
+        <ul class="bullets"><li>ทำให้คำถามวิจัยมีความชัดเจนและวัดผลได้จริง</li></ul>
+      </div>
+      <div class="panel">
+        <h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg></span>ตัวอย่าง PROMPT สำหรับผู้บริหาร</h3>
+        <div class="prompt-box"><div class="prompt-tag"><span class="dot"></span>PROMPT</div>
+          <p>"ฉันเป็นหัวหน้าตึกศัลยกรรม พบปัญหาผู้ป่วยรอคอยคิวนานในขั้นตอนการเตรียมตัวก่อนผ่าตัด ช่วยวิเคราะห์และเสนอคำถามวิจัย R2R โดยใช้กรอบ PICO ให้หน่อย"</p>
+        </div>
+        <p class="prompt-caption">* AI จะช่วยร่างคำถามที่เจาะจง เช่น "การใช้ระบบนัดหมายดิจิทัล (I) ช่วยลดเวลารอคอย (O) เมื่อเทียบกับระบบเดิม (C) ในผู้ป่วยผ่าตัด (P) หรือไม่"</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 5 : STEP 2 ================= -->
+<section class="slide" id="slide-5">
+  <div class="slide-inner">
+    <div class="eyebrow">AI-R2R Workflow · Step 2 of 5</div>
+    <h2 data-reveal>ขั้นตอนที่ 2: การทบทวนวรรณกรรมอัจฉริยะ</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-book"/></svg></span>ทำไมต้องใช้ AI ทบทวนวรรณกรรม?</h3>
+        <ul class="bullets">
+          <li><b class="accent-text">Speed:</b> สรุปงานวิจัยนับร้อยฉบับได้ในเวลาไม่กี่นาที</li>
+          <li><b class="accent-text">Synthesis:</b> เชื่อมโยงความสัมพันธ์ของงานวิจัยแต่ละชิ้น</li>
+          <li><b class="accent-text">Gap Analysis:</b> ค้นหาช่องว่างที่งานวิจัยเดิมยังไม่ได้ตอบโจทย์</li>
+        </ul>
+        <h3 style="margin-top:1.3rem;">เครื่องมือแนะนำ <span class="en">(Recommended Tools)</span></h3>
+        <div><span class="pill ghost en">Perplexity AI</span><span class="pill ghost en">Elicit.com</span><span class="pill ghost en">Consensus.app</span><span class="pill ghost en">ChatPDF</span></div>
+      </div>
+      <div class="panel">
+        <h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg></span>ตัวอย่าง Prompt สำหรับผู้บริหาร</h3>
+        <p style="font-size:1rem; color:var(--ink-soft); line-height:1.6;">"ช่วยสรุปแนวทางการลดระยะเวลารอคอยในโรงพยาบาลจากงานวิจัยทั่วโลกในช่วง 5 ปีที่ผ่านมา และสรุปออกมาเป็นตารางเปรียบเทียบจุดเด่นจุดด้อยของแต่ละวิธี"</p>
+        <div class="prompt-box"><div class="prompt-tag"><span class="dot"></span>Prompt Structure</div>
+          <p><span class="role-tag">System Prompt:</span>คุณคือนักวิจัยอาวุโส ช่วยวิเคราะห์บทความวิจัยที่แนบมานี้...</p>
+          <p><span class="role-tag">User Prompt:</span>สรุปประเด็นสำคัญ 3 ข้อที่ผู้บริหารควรทราบเพื่อนำไปปรับปรุงกระบวนการทำงาน</p>
+        </div>
+        <p class="prompt-caption">AI จะช่วยคัดกรองเฉพาะ "เนื้อหาที่นำไปใช้ได้จริง" (Actionable Insights)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 6 : STEP 3 ================= -->
+<section class="slide" id="slide-6">
+  <div class="slide-inner">
+    <div class="eyebrow">AI-R2R Workflow · Step 3 of 5</div>
+    <h2 data-reveal>ขั้นตอนที่ 3: การออกแบบการวิจัยและเครื่องมือ</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-clipboard"/></svg></span>AI ช่วยออกแบบอะไรได้บ้าง?</h3>
+        <ul class="bullets">
+          <li><b>โครงร่างวิจัย (Proposal):</b> ช่วยร่างวัตถุประสงค์ ขอบเขต และระเบียบวิธีวิจัย</li>
+          <li><b>เครื่องมือเก็บข้อมูล:</b> สร้างแบบสอบถาม แบบสัมภาษณ์ หรือ Check-list</li>
+          <li><b>ความตรงเชิงเนื้อหา:</b> แนะนำแนวทางการทำ IOC และการตรวจสอบคุณภาพเครื่องมือ</li>
+          <li><b>การสุ่มตัวอย่าง:</b> แนะนำสูตรคำนวณขนาดตัวอย่างที่เหมาะสม</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg></span>ตัวอย่าง Prompt สำหรับผู้บริหาร</h3>
+        <div class="prompt-box"><div class="prompt-tag"><span class="dot"></span>PROMPT</div>
+          <p>"ช่วยออกแบบแบบสอบถามความพึงพอใจของผู้ป่วยต่อระบบนัดหมายออนไลน์ โดยใช้มาตรวัดแบบ Likert Scale 5 ระดับ ครอบคลุมด้านความง่ายในการใช้งาน ความรวดเร็ว และความปลอดภัยของข้อมูล พร้อมแนะนำวิธีการตรวจสอบ IOC"</p>
+        </div>
+        <p class="prompt-caption">* AI จะช่วยสร้างข้อคำถามที่ครอบคลุมและเป็นมาตรฐาน ช่วยให้ทีมงานเริ่มต้นได้เร็วขึ้น 5-10 เท่า</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 7 : STEP 4 ================= -->
+<section class="slide" id="slide-7">
+  <div class="slide-inner">
+    <div class="eyebrow">AI-R2R Workflow · Step 4 of 5</div>
+    <h2 data-reveal>ขั้นตอนที่ 4: การวิเคราะห์ข้อมูลด้วย AI</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div>
+        <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chart"/></svg></span>เปลี่ยนข้อมูลดิบเป็นสารสนเทศ</h3>
+          <ul class="bullets">
+            <li>วิเคราะห์แนวโน้ม (Trend) และความสัมพันธ์ (Correlation)</li>
+            <li>ประเมินความคุ้มค่า (Cost-effectiveness) ของโครงการ</li>
+            <li>แปลผลสถิติที่ซับซ้อนให้เป็นภาษาบริหารที่เข้าใจง่าย</li>
+          </ul>
+          <div class="prompt-box"><div class="prompt-tag"><span class="dot"></span>PROMPT</div>
+            <p>"นี่คือข้อมูลดิบของระยะเวลาการรอคอย (แนบไฟล์ CSV) ช่วยวิเคราะห์หาความสัมพันธ์ระหว่างจำนวนเจ้าหน้าที่กับระยะเวลารอคอย และสร้างกราฟที่เห็นแนวโน้มชัดเจนเพื่อนำเสนอในที่ประชุม"</p>
+          </div>
+        </div>
+      </div>
+      <div class="dash">
+        <div class="dash-title en">Transforming Healthcare Through Data &amp; Innovation</div>
+        <div class="dash-grid">
+          <div class="dash-tile"><span class="k en">Total Patients</span><span class="v num">128,540</span><span class="d up num">+0.3%</span></div>
+          <div class="dash-tile"><span class="k en">At Risk Patients</span><span class="v num">23,457</span><span class="d up num">+5.2%</span></div>
+          <div class="dash-tile"><span class="k en">Readmission Rate</span><span class="v num">9.4%</span><span class="d down num">-1.3%</span></div>
+          <div class="dash-tile"><span class="k en">Mortality Rate</span><span class="v num">1.2%</span><span class="d down num">-0.4%</span></div>
+          <div class="dash-tile"><span class="k en">Avg Length of Stay</span><span class="v num">4.6 <span class="en" style="font-size:.6em;">Days</span></span><span class="d down num">-0.6</span></div>
+          <div class="dash-tile"><span class="k en">Bed Utilization</span><span class="v num">72%</span><span class="d up num">+6%</span></div>
+          <div class="dash-tile"><span class="k en">Staff Utilization</span><span class="v num">68%</span><span class="d up num">+6%</span></div>
+          <div class="dash-tile"><span class="k en">Risk Prediction Accuracy</span><span class="v num">89%</span><span class="d up num">+5%</span></div>
+        </div>
+        <div class="dash-foot">
+          <span class="dash-chip en">Population Health Insights</span>
+          <span class="dash-chip en">Clinical Outcomes</span>
+          <span class="dash-chip en">Research &amp; Innovation</span>
+          <span class="dash-chip en">AI &amp; Predictive Analytics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 8 : STEP 5 ================= -->
+<section class="slide" id="slide-8">
+  <div class="slide-inner">
+    <div class="eyebrow">AI-R2R Workflow · Step 5 of 5</div>
+    <h2 data-reveal>ขั้นตอนที่ 5: การเขียนรายงานและข้อเสนอแนะ</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-megaphone"/></svg></span>เปลี่ยนผลวิจัยเป็น "ภาษาบริหาร"</h3>
+        <ul class="bullets">
+          <li><b>Executive Summary:</b> สรุปประเด็นสำคัญใน 1 หน้ากระดาษเพื่อการตัดสินใจ</li>
+          <li><b>Policy Recommendation:</b> แปลงตัวเลขสถิติเป็นข้อเสนอแนะเชิงนโยบายที่ทำได้จริง</li>
+          <li><b>Impact Communication:</b> เน้นความคุ้มค่า (ROI) และผลประโยชน์ต่อผู้รับบริการ</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg></span>ตัวอย่าง PROMPT สำหรับผู้บริหาร</h3>
+        <div class="prompt-box"><div class="prompt-tag"><span class="dot"></span>PROMPT</div>
+          <p>"จากผลการวิจัยที่พบว่าระบบใหม่ลดเวลารอคอยได้ 30% ช่วยร่าง บันทึกข้อความ เสนอผู้อำนวยการเพื่อขออนุมัติขยายผลการใช้งานไปยังแผนกอื่นๆ โดยเน้นความคุ้มค่าและผลประโยชน์ต่อผู้ป่วยในระยะยาว"</p>
+        </div>
+        <p class="prompt-caption">* AI ช่วยปรับโทนภาษาให้เป็นทางการและมีความเป็นมืออาชีพ พร้อมโครงสร้างที่โน้มน้าวใจผู้บริหารระดับสูง</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 9 : USE CASE FALL ================= -->
+<section class="slide" id="slide-9">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 1 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bed"/></svg></span>
+      <h2>Use Case: การลดอุบัติการณ์การตกเตียงด้วย AI-R2R</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>สถิติการตกเตียงสูงขึ้นในหอผู้ป่วยอายุรกรรม</li>
+          <li>มาตรการเดิม (Check-list กระดาษ) ไม่สามารถลดอุบัติการณ์ได้จริง</li>
+          <li>พยาบาลมีภาระงานล้นมือจนขาดการเฝ้าระวังที่ตรงจุด</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์ข้อมูลย้อนหลัง 2 ปี พบ <b>Pattern</b> สำคัญ: เหตุเกิดบ่อยช่วงเปลี่ยนเวร</li>
+          <li>พัฒนา <b>Predictive Model</b> คัดกรองผู้ป่วยกลุ่มเสี่ยงสูงแบบ Real-time</li>
+          <li>ติดตั้งเซนเซอร์แจ้งเตือนผ่าน AI เมื่อผู้ป่วยขยับตัวผิดปกติ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์และการขยายผล</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">อุบัติการณ์การตกเตียงลดลงอย่างมีนัยสำคัญ</p>
+        <div class="stat-plate"><span class="num en">50%</span><span class="lbl en">Reduction in Fall Incidents</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> อนุมัติงบประมาณและสนับสนุนเวลาให้ทีมงานทำวิจัยต่อเนื่อง</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 10 : USE CASE 2 NCD ================= -->
+<section class="slide" id="slide-10">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 2 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-heart"/></svg></span>
+      <h2>Use Case 2: การคัดกรอง NCDs เชิงรุกด้วย AI</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>งบประมาณและบุคลากรจำกัดในการคัดกรองประชากรกลุ่มใหญ่</li>
+          <li>การคัดกรองแบบเดิมมีความล่าช้าและไม่ครอบคลุมกลุ่มเสี่ยงแฝง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Solution</h3></div>
+        <ul class="bullets">
+          <li>ใช้ Machine Learning วิเคราะห์ข้อมูลสุขภาพย้อนหลังเพื่อทำ <b>Predictive Scoring</b></li>
+          <li>ระบุกลุ่มเสี่ยงสูงต่อโรคเบาหวาน/ความดันล่วงหน้าได้อย่างแม่นยำ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ตรวจพบผู้ป่วยรายใหม่เพิ่มขึ้น</p>
+        <div class="stat-plate"><span class="num en">40%</span><span class="lbl en">Early Detection Increase</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> ผลักดันการเชื่อมโยงฐานข้อมูลสุขภาพระดับเขต</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 11 : USE CASE 3 PHARMACY ================= -->
+<section class="slide" id="slide-11">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 3 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pill"/></svg></span>
+      <h2>Use Case 3: การเพิ่มประสิทธิภาพคลังเวชภัณฑ์</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ยาขาดคลัง (Stock-out) และยาหมดอายุ (Expired) ส่งผลต่องบประมาณ</li>
+          <li>การสั่งซื้อแบบเดิมไม่ได้อ้างอิงตามอุบัติการณ์โรคที่เปลี่ยนไป</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์ข้อมูลย้อนหลังเพื่อทำ <b>Demand Forecasting</b> ล่วงหน้า 3-6 เดือน</li>
+          <li>ระบบแจ้งเตือนการสั่งซื้ออัตโนมัติที่แม่นยำตามฤดูกาล</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดมูลค่ายาหมดอายุได้กว่า</p>
+        <div class="stat-plate"><span class="num en">1,000,000+</span><span class="lbl en">บาท/ปี</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> อนุมัติการใช้ระบบบริหารคลังแบบดิจิทัล</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 12 : USE CASE 4 FEEDBACK NLP ================= -->
+<section class="slide" id="slide-12">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 4 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg></span>
+      <h2>Use Case 4: การวิเคราะห์เสียงสะท้อนผู้รับบริการ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ข้อร้องเรียนและข้อเสนอแนะมีจำนวนมากในรูปแบบข้อความ</li>
+          <li>การวิเคราะห์ด้วยคนทำได้ช้าและอาจมีอคติในการจำแนกประเด็น</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>NLP Solution</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์ <b>Sentiment</b> และ <b>Topic Modeling</b> อัตโนมัติ</li>
+          <li>จำแนกหมวดหมู่และระดับความรุนแรงของข้อร้องเรียนได้ทันที</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ระยะเวลาในการตอบสนองลดลง</p>
+        <div class="stat-plate"><span class="num en">60%</span><span class="lbl en">Response Time Reduction</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> นำข้อมูลสรุปไปปรับปรุงกระบวนการบริการเชิงรุก</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 13 : USE CASE 5 SCHEDULING ================= -->
+<section class="slide" id="slide-13">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 5 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calendar"/></svg></span>
+      <h2>Use Case 5: การจัดตารางเวรอัจฉริยะ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>การจัดตารางเวรมีความซับซ้อนสูงและมักเกิดความไม่เป็นธรรม</li>
+          <li>เกิดภาวะ <b>Burnout</b> จากการจัดเวรที่ไม่เหมาะสมสะสมเป็นเวลานาน</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI Optimization จัดตารางเวรอัตโนมัติ โดยคำนึงถึง <b>Fatigue Score</b></li>
+          <li>จัดลำดับความสำคัญตามทักษะและความต้องการส่วนบุคคลอย่างสมดุล</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ความพึงพอใจของบุคลากรเพิ่มขึ้น</p>
+        <div class="stat-plate"><span class="num en">35%</span><span class="lbl en">Staff Satisfaction Increase</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> กำหนดนโยบายการจัดเวรที่ยืดหยุ่นและเป็นธรรม</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 14 : USE CASE 6 STAFF RETENTION ================= -->
+<section class="slide" id="slide-14">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 6 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-users"/></svg></span>
+      <h2>Use Case 6: การวิเคราะห์และรักษาบุคลากร</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>อัตราการลาออกของบุคลากรสายวิชาชีพสูง กระทบต่อคุณภาพบริการ</li>
+          <li>การรักษาบุคลากรแบบเดิมมักทำเมื่อเกิดปัญหาแล้ว (Reactive)</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์สัญญาณเตือน <b>(Early Warning Signs)</b> จากข้อมูลพฤติกรรม</li>
+          <li>ระบุบุคลากรที่มีความเสี่ยงจะลาออกล่วงหน้าเพื่อเข้าช่วยเหลือได้ทันเวลา</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดอัตราการลาออกของบุคลากร</p>
+        <div class="stat-plate"><span class="num en">15%</span><span class="lbl en">Reduction in Attrition Rate</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> ปรับปรุงสวัสดิการและสภาพแวดล้อมให้ตรงจุด</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 15 : USE CASE 7 COMPETENCY ================= -->
+<section class="slide" id="slide-15">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 7 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cap"/></svg></span>
+      <h2>Use Case 7: การพัฒนาสมรรถนะรายบุคคล</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>การจัดอบรมแบบเดิม (One-size-fits-all) ไม่ตอบโจทย์รายบุคคล</li>
+          <li>ยากต่อการระบุ <b>Skill Gap</b> ที่แท้จริงของบุคลากรที่มีความหลากหลาย</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์และแนะนำ <b>Personalized Learning Path</b> แบบเฉพาะบุคคล</li>
+          <li>เชื่อมโยงการเรียนรู้เข้ากับเป้าหมายอาชีพและผลการปฏิบัติงานจริง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">บุคลากรมีสมรรถนะตามมาตรฐานเร็วขึ้น</p>
+        <div class="stat-plate"><span class="num en">25%</span><span class="lbl en">Faster Competency Development</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> สนับสนุนระบบ Lifelong Learning ยุคดิจิทัล</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 16 : USE CASE 8 PREDICTIVE MAINTENANCE ================= -->
+<section class="slide" id="slide-16">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 8 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-wrench"/></svg></span>
+      <h2>Use Case 8: การบำรุงรักษาเครื่องมือแพทย์เชิงพยากรณ์</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>เครื่องมือราคาแพง (MRI, CT) เสียกะทันหัน กระทบการรับบริการ</li>
+          <li>การซ่อมบำรุงแบบเดิม (Reactive) ทำให้มีค่าใช้จ่ายสูงและเครื่องหยุดทำงานนาน</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์ข้อมูล <b>IoT</b> เพื่อพยากรณ์โอกาสที่จะเสียล่วงหน้า</li>
+          <li>เปลี่ยนเป็น <b>Predictive Maintenance</b> ซ่อมก่อนที่จะเกิดปัญหาจริง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดอัตราเครื่องหยุดทำงาน (Downtime)</p>
+        <div class="stat-plate"><span class="num en">40%</span><span class="lbl en">Reduction in Downtime</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> วางแผนการลงทุนและดูแลสินทรัพย์ระยะยาว</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 17 : USE CASE 9 BED MANAGEMENT ================= -->
+<section class="slide" id="slide-17">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 9 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bed"/></svg></span>
+      <h2>Use Case 9: การบริหารจัดการเตียงอัจฉริยะ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ปัญหาเตียงเต็มและความแออัดใน ER เนื่องจากกระบวนการจำหน่ายล่าช้า</li>
+          <li>ยากต่อการวางแผนรับผู้ป่วยใหม่เนื่องจากไม่ทราบเวลาเตียงว่างที่แน่นอน</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI พยากรณ์เวลาจำหน่าย <b>(Discharge Prediction)</b> ล่วงหน้า 24-48 ชม.</li>
+          <li>ช่วยให้ทีมบริหารเตียงวางแผนหมุนเวียนทรัพยากรได้อย่างมีประสิทธิภาพ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดระยะเวลารอคอยเตียงใน ER</p>
+        <div class="stat-plate"><span class="num en">30%</span><span class="lbl en">Reduction in ER Waiting Time</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> สนับสนุน Dashboard ติดตามสถานะเตียง Real-time</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 18 : USE CASE 10 GREEN HOSPITAL ================= -->
+<section class="slide" id="slide-18">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 10 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-leaf"/></svg></span>
+      <h2>Use Case 10: โรงพยาบาลสีเขียวด้วยพลัง AI</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ค่าใช้จ่ายด้านพลังงาน (ไฟฟ้า/น้ำ) สูงมาก และเพิ่มขึ้นอย่างต่อเนื่อง</li>
+          <li>การจัดการขยะติดเชื้อมีความเสี่ยงและค่าใช้จ่ายสูงหากจัดการไม่ดี</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ควบคุมระบบปรับอากาศและแสงสว่างอัตโนมัติตาม <b>Real-time Density</b></li>
+          <li>ใช้ AI วิเคราะห์เส้นทางและปริมาณขยะเพื่อเพิ่มประสิทธิภาพการจัดการ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดการใช้พลังงานในโรงพยาบาลได้</p>
+        <div class="stat-plate"><span class="num en">15-20%</span><span class="lbl en">Energy Consumption Reduction</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> กำหนดนโยบาย Smart &amp; Green Hospital</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 19 : USE CASE 11 MEDICINE DEMAND ================= -->
+<section class="slide" id="slide-19">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 11 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trend"/></svg></span>
+      <h2>Use Case 11: การพยากรณ์ความต้องการยาแม่นยำสูง</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ปัญหายาขาดคลัง (Stock-out) หรือยาเกินคลังจนหมดอายุ (Expired)</li>
+          <li>สูญเสียงบประมาณมหาศาลจากการบริหารจัดการคลังที่ไม่แม่นยำ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์ปัจจัยรอบด้าน เช่น สถิติโรคและสภาพอากาศ เพื่อพยากรณ์การใช้ยา</li>
+          <li>ช่วยกำหนดปริมาณการจัดซื้อและสำรองยา <b>(Inventory Optimization)</b></li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดอัตรา Stock-out ได้อย่างมีนัยสำคัญ</p>
+        <div class="stat-plate"><span class="num en">50%</span><span class="lbl en">Reduction in Stock-out Rate</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> ผลักดันการเชื่อมโยงข้อมูลระบบคลังและเวชระเบียน</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 20 : USE CASE 12 MEDICATION SAFETY ================= -->
+<section class="slide" id="slide-20">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 12 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-shieldcheck"/></svg></span>
+      <h2>Use Case 12: ระบบตรวจสอบความปลอดภัยในการใช้ยา</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ความผิดพลาดในการสั่งยา (Medication Errors) เช่น การแพ้ยาหรือปริมาณยาไม่เหมาะสม</li>
+          <li>ความซับซ้อนของข้อมูลยาทำให้ยากต่อการตรวจสอบด้วยมนุษย์เพียงอย่างเดียว</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI เป็นผู้ช่วยตรวจสอบ <b>(Digital Assistant)</b> ทุกคำสั่งยาแบบ Real-time</li>
+          <li>เทียบกับประวัติผู้ป่วยและฐานข้อมูลวิชาการล่าสุดเพื่อแจ้งเตือนความเสี่ยง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ดักจับความเสี่ยงก่อนถึงตัวผู้ป่วยได้เพิ่มขึ้น</p>
+        <div class="stat-plate"><span class="num en">70%</span><span class="lbl en">Increase in Risk Detection</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> ลงทุนในระบบสนับสนุนการตัดสินใจทางคลินิก (CDSS)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 21 : USE CASE 13 COLD CHAIN ================= -->
+<section class="slide" id="slide-21">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 13 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-truck"/></svg></span>
+      <h2>Use Case 13: การจัดการโซ่อุปทานอัจฉริยะ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ยาและวัคซีนเสื่อมสภาพจากการควบคุมอุณหภูมิที่ไม่เข้มงวดระหว่างขนส่ง</li>
+          <li>ยากต่อการตรวจสอบคุณภาพยาที่ปลายทางหากระบบ <b>Cold Chain</b> ล้มเหลว</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้เซนเซอร์ IoT ติดตามอุณหภูมิและสภาพการขนส่งตลอดเส้นทาง</li>
+          <li>ใช้ AI วิเคราะห์ความเสี่ยงล่วงหน้าเพื่อแจ้งเตือนก่อนยาเสียหาย (Proactive Alert)</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">รับประกันคุณภาพยาจนถึงมือผู้ป่วย</p>
+        <div class="stat-plate"><span class="num en">100%</span><span class="lbl en">Quality Assurance Guarantee</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> กำหนดมาตรฐานการขนส่งเวชภัณฑ์ด้วยเทคโนโลยี</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 22 : USE CASE 14 DATA INTEGRATION ================= -->
+<section class="slide" id="slide-22">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 14 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-link"/></svg></span>
+      <h2>Use Case 14: การบูรณาการข้อมูลสุขภาพข้ามระบบ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ข้อมูลผู้ป่วยกระจัดกระจายอยู่ในต่างระบบ (Siloed Data) ทำให้การรักษาไม่ต่อเนื่อง</li>
+          <li>เกิดการตรวจซ้ำซ้อนที่ไม่จำเป็นเนื่องจากไม่สามารถเข้าถึงประวัติข้ามเครือข่ายได้</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ช่วยแปลงข้อมูลจากรูปแบบต่างๆ ให้เป็นมาตรฐานสากล (เช่น <b>FHIR</b>)</li>
+          <li>เชื่อมโยงและแมปข้อมูลประวัติการรักษาข้ามเครือข่ายได้อย่างแม่นยำอัตโนมัติ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดอัตราการตรวจซ้ำซ้อนในเครือข่าย</p>
+        <div class="stat-plate"><span class="num en">25%</span><span class="lbl en">Reduction in Redundant Tests</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> กำหนดนโยบายการแลกเปลี่ยนข้อมูลสุขภาพระดับเครือข่าย</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 23 : USE CASE 15 PRIVACY & SECURITY ================= -->
+<section class="slide" id="slide-23">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 15 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg></span>
+      <h2>Use Case 15: การปกป้องความเป็นส่วนตัวและความปลอดภัยข้อมูล</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ความเสี่ยงจากการถูกโจมตีทางไซเบอร์ (Ransomware) และข้อมูลรั่วไหล</li>
+          <li>ยากต่อการตรวจสอบการเข้าถึงข้อมูลที่ผิดปกติในระบบขนาดใหญ่</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ตรวจจับพฤติกรรมที่ผิดปกติ <b>(Anomaly Detection)</b> แบบ Real-time</li>
+          <li>ระบุการบุกรุกหรือการเข้าถึงข้อมูลที่ไม่ได้รับอนุญาตได้ทันท่วงทีก่อนเกิดความเสียหาย</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ตรวจจับการเข้าถึงที่ผิดปกติได้เร็วขึ้น</p>
+        <div class="stat-plate"><span class="num en">80%</span><span class="lbl en">Faster Threat Detection</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> กำหนดนโยบาย Cybersecurity และลงทุนในระบบปกป้องความเป็นส่วนตัว</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 24 : USE CASE 16 NLP EXTRACTION ================= -->
+<section class="slide" id="slide-24">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 16 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-searchtext"/></svg></span>
+      <h2>Use Case 16: การสกัดความรู้จากเวชระเบียนแบบข้อความ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ข้อมูลสำคัญจำนวนมากถูกบันทึกเป็นข้อความอิสระ (Free Text) ยากต่อการวิเคราะห์</li>
+          <li>การเก็บข้อมูลเพื่อวิจัย R2R ใช้เวลานานและมีโอกาสเกิดความผิดพลาดสูง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ประมวลผลภาษาธรรมชาติ <b>(NLP)</b> สกัดข้อมูลสำคัญจากเวชระเบียน</li>
+          <li>แปลงข้อมูลข้อความให้เป็นข้อมูลโครงสร้างเพื่อการวิจัยและบริหารจัดการอัตโนมัติ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">สกัดข้อมูลเพื่อทำวิจัย R2R ได้เร็วขึ้น</p>
+        <div class="stat-plate"><span class="num en">10 เท่า</span><span class="lbl en">Faster Data Extraction</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> สนับสนุนการพัฒนาระบบเวชระเบียนอัจฉริยะ</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 25 : USE CASE 17 CLAIMS AUDIT ================= -->
+<section class="slide" id="slide-25">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 17 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-receipt"/></svg></span>
+      <h2>Use Case 17: การตรวจสอบความถูกต้องของการเบิกจ่าย</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ความผิดพลาดในการให้รหัสโรค (Coding) ทำให้ถูกปฏิเสธการจ่ายเงิน (Denial)</li>
+          <li>ภาระงานในการตรวจสอบข้อมูลก่อนส่งเบิกจำนวนมหาศาลเกินกำลังคน</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ตรวจสอบความสอดคล้องระหว่างบันทึกการรักษากับรหัสโรคแบบ 100%</li>
+          <li>แจ้งเตือนจุดที่ข้อมูลไม่ครบถ้วนหรือรหัสไม่ถูกต้องทันที <b>(Smart Auditor)</b></li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดอัตราการถูกปฏิเสธการเบิกจ่าย</p>
+        <div class="stat-plate"><span class="num en">40%</span><span class="lbl en">Reduction in Claim Denials</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> พัฒนาระบบ Smart Audit และเพิ่มรายได้ที่ถูกต้องให้องค์กร</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 26 : USE CASE 18 COST ANALYSIS ================= -->
+<section class="slide" id="slide-26">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 18 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-calculator"/></svg></span>
+      <h2>Use Case 18: การวิเคราะห์ต้นทุนรายกิจกรรม</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>การคำนวณต้นทุนต่อหน่วยมักใช้ค่าเฉลี่ย ไม่สะท้อนต้นทุนจริงรายผู้ป่วย</li>
+          <li>ยากต่อการระบุจุดที่เกิดความสูญเสีย (Waste) ในกระบวนการทำงาน</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI ติดตามการใช้ทรัพยากรจริงรายบุคคล <b>(Activity Based Tracking)</b></li>
+          <li>คำนวณต้นทุนที่แม่นยำในระดับกิจกรรมเพื่อการวางแผนงบประมาณที่ตรงจุด</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ลดต้นทุนการดำเนินงานโดยไม่กระทบคุณภาพ</p>
+        <div class="stat-plate"><span class="num en">15%</span><span class="lbl en">Operational Cost Reduction</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> ใช้ข้อมูลต้นทุนจริงในการตัดสินใจเชิงกลยุทธ์</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 27 : USE CASE 19 FRAUD DETECTION ================= -->
+<section class="slide" id="slide-27">
+  <div class="slide-inner">
+    <div class="eyebrow">Applied Use Case · 19 of 19</div>
+    <div class="uc-head" data-reveal><span class="badge3d"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-eye"/></svg></span>
+      <h2>Use Case 19: การตรวจจับการทุจริตและพฤติกรรมผิดปกติ</h2></div>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">1</span><h3>ปัญหาหน้างาน</h3></div>
+        <ul class="bullets">
+          <li>ความเสี่ยงจากการทุจริตในกระบวนการจัดซื้อและการเบิกจ่ายเงินงบประมาณ</li>
+          <li>ยากต่อการตรวจสอบพฤติกรรมที่ผิดปกติด้วยระบบ Manual ในปริมาณธุรกรรมที่สูง</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">2</span><h3>AI Intervention</h3></div>
+        <ul class="bullets">
+          <li>ใช้ AI วิเคราะห์รูปแบบข้อมูลการเงินเพื่อค้นหาความผิดปกติ <b>(Outlier Analysis)</b></li>
+          <li>ดักจับพฤติกรรมเสี่ยงหรือความสัมพันธ์ที่ส่อไปในทางทุจริตได้โดยอัตโนมัติ</li>
+        </ul></div>
+      <div class="panel"><div class="uc-col-head"><span class="uc-num">3</span><h3>ผลลัพธ์ (R2R Outcome)</h3></div>
+        <p style="font-size:1rem;color:var(--ink-soft);margin:0 0 .3rem;">ดักจับพฤติกรรมเสี่ยงได้เร็วกว่าเดิม</p>
+        <div class="stat-plate"><span class="num en">5 เท่า</span><span class="lbl en">Faster Fraud Detection</span></div>
+        <div class="role-note"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-compass"/></svg><span><b>บทบาทผู้บริหาร:</b> เสริมสร้างธรรมาภิบาลด้วยเทคโนโลยีที่โปร่งใส</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 28 : ETHICS & SAFETY ================= -->
+<section class="slide" id="slide-28">
+  <div class="slide-inner">
+    <div class="eyebrow">Governance</div>
+    <h2 data-reveal>จริยธรรมและความปลอดภัยในการใช้ AI</h2>
+    <div class="rule"></div>
+    <div class="grid2" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-eye"/></svg></span>สิ่งที่ผู้บริหารต้องพึงระวัง</h3>
+        <ul class="bullets">
+          <li><b class="accent-text">Data Privacy:</b> ห้ามนำข้อมูลระบุตัวตนผู้ป่วย (PII) เข้าสู่ระบบ AI สาธารณะโดยเด็ดขาด</li>
+          <li><b class="accent-text">Hallucination:</b> AI อาจสร้างข้อมูลเท็จ ต้องมีการตรวจสอบความถูกต้อง (Fact-check) เสมอ</li>
+          <li><b class="accent-text">Bias:</b> ระวังอคติในชุดข้อมูลที่อาจส่งผลต่อการตัดสินใจเชิงนโยบาย</li>
+        </ul>
+      </div>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-scale"/></svg></span>แนวทางการกำกับดูแล</h3>
+        <ul class="bullets">
+          <li>กำหนด <b>AI Guideline</b> ของหน่วยงานให้ชัดเจน</li>
+          <li>ยึดหลัก <b>Human-in-the-loop</b>: AI เป็นผู้ช่วย แต่การตัดสินใจสุดท้ายอยู่ที่มนุษย์</li>
+        </ul>
+        <div class="inset-box"><h4>ความรับผิดชอบ (Accountability)</h4>
+          <p>ผู้วิจัยและผู้บริหารยังคงเป็นเจ้าของผลงานและความรับผิดชอบต่อผลลัพธ์ที่เกิดขึ้น ไม่ใช่ AI</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 29 : CULTURE ================= -->
+<section class="slide" id="slide-29">
+  <div class="slide-inner">
+    <div class="eyebrow">Culture</div>
+    <h2 data-reveal>การสร้างวัฒนธรรม AI-R2R ในองค์กร</h2>
+    <div class="rule"></div>
+    <div class="grid3" data-reveal>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg></span>1. Vision</h3>
+        <ul class="bullets">
+          <li>ทำให้ R2R เป็นเรื่อง <b>"ง่ายและสนุก"</b> ด้วยพลังของ AI</li>
+          <li>เปลี่ยนจากภาระงานวิจัย เป็นเครื่องมือแก้ปัญหาที่ทรงพลัง</li>
+        </ul></div>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cap"/></svg></span>2. Action Plan</h3>
+        <ul class="bullets">
+          <li>จัดอบรม <b>Prompt Engineering</b> พื้นฐานให้บุคลากรทุกระดับ</li>
+          <li>จัดหาเครื่องมือ AI ที่ปลอดภัยและเป็น Enterprise Version</li>
+          <li>สร้างทีมที่ปรึกษา (AI-R2R Mentors) ในหน่วยงาน</li>
+        </ul></div>
+      <div class="panel"><h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-seedling"/></svg></span>3. Recognition</h3>
+        <ul class="bullets">
+          <li>ให้รางวัลหรือคำชมเชยสำหรับงานวิจัยที่นำ AI มาใช้ได้จริง</li>
+          <li>จัดเวที <b>Show &amp; Share</b> เพื่อแลกเปลี่ยนเทคนิคการใช้ AI ในงานประจำ</li>
+        </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SLIDE 30 : CLOSING / Q&A ================= -->
+<section class="slide" id="slide-30">
+  <div class="slide-inner">
+    <div class="eyebrow">Closing</div>
+    <h2 data-reveal>บทสรุปและแลกเปลี่ยนเรียนรู้</h2>
+    <div class="rule"></div>
+    <div class="close-grid" data-reveal>
+      <div class="panel">
+        <h3><span class="badge3d sm"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chart"/></svg></span>Key Takeaways สำหรับผู้บริหาร</h3>
+        <ul class="bullets">
+          <li><b class="accent-text">AI คือตัวทวีคูณ (Multiplier):</b> ไม่ได้มาแทนที่คน แต่มาช่วยให้ R2R ง่ายขึ้นและทรงพลังกว่าเดิม</li>
+          <li><b class="accent-text">Data-Driven Culture:</b> ใช้ AI เปลี่ยนข้อมูลประจำวันเป็นนวัตกรรมที่วัดผลได้จริง</li>
+          <li><b class="accent-text">Agile Leadership:</b> ผู้บริหารต้องกล้าสนับสนุนการใช้เครื่องมือใหม่ๆ ภายใต้จริยธรรมที่เหมาะสม</li>
+        </ul>
+        <p class="quote">"R2R + AI = การพัฒนาบริการสุขภาพที่ก้าวกระโดดและยั่งยืน"</p>
+      </div>
+      <div class="qa-panel">
+        <span class="badge3d dark"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#i-hand"/></svg></span>
+        <div class="qa-big en">Q&amp;A</div>
+        <p>แลกเปลี่ยนเรียนรู้<br>และก้าวสู่ยุค AI-R2R ไปด้วยกัน</p>
+        <a href="mailto:sarawut@bcnsurat.ac.th">sarawut@bcnsurat.ac.th</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var rail = document.getElementById('rail');
+  var counter = document.getElementById('slideCounter');
+  var fill = document.getElementById('progressFill');
+
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', 'ไปที่สไลด์ ' + (i+1));
+    b.dataset.index = i;
+    b.addEventListener('click', function(){ scrollToSlide(i); });
+    rail.appendChild(b);
+  });
+  var railBtns = Array.prototype.slice.call(rail.children);
+
+  function scrollToSlide(i){
+    slides[i].scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'});
+  }
+  document.getElementById('prevBtn').addEventListener('click', function(){
+    var cur = currentIndex(); scrollToSlide(Math.max(0, cur-1));
+  });
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    var cur = currentIndex(); scrollToSlide(Math.min(slides.length-1, cur+1));
+  });
+  function currentIndex(){
+    var idx = 0, best = Infinity;
+    slides.forEach(function(s,i){
+      var d = Math.abs(s.getBoundingClientRect().top);
+      if(d < best){ best = d; idx = i; }
+    });
+    return idx;
+  }
+
+  window.addEventListener('keydown', function(e){
+    if(['ArrowDown','PageDown',' '].indexOf(e.key) > -1){ e.preventDefault(); scrollToSlide(Math.min(slides.length-1, currentIndex()+1)); }
+    else if(['ArrowUp','PageUp'].indexOf(e.key) > -1){ e.preventDefault(); scrollToSlide(Math.max(0, currentIndex()-1)); }
+    else if(e.key === 'Home'){ e.preventDefault(); scrollToSlide(0); }
+    else if(e.key === 'End'){ e.preventDefault(); scrollToSlide(slides.length-1); }
+  });
+
+  var revealEls = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
+  var revealObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); } });
+  }, {root: deck, threshold: 0.18});
+  revealEls.forEach(function(el){ revealObs.observe(el); });
+
+  var activeObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting && en.intersectionRatio > 0.5){
+        var i = slides.indexOf(en.target);
+        railBtns.forEach(function(b,bi){ b.classList.toggle('active', bi===i); });
+        counter.textContent = String(i+1).padStart(2,'0');
+      }
+    });
+  }, {root: deck, threshold: [0.5]});
+  slides.forEach(function(s){ activeObs.observe(s); });
+
+  deck.addEventListener('scroll', function(){
+    var max = deck.scrollHeight - deck.clientHeight;
+    var pct = max > 0 ? (deck.scrollTop / max) * 100 : 0;
+    fill.style.width = pct + '%';
+  });
+})();
+</script>
